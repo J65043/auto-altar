@@ -71,7 +71,8 @@ while true do
         "Set enable signal to " .. (config.on_high and "'Disable with Redstone'" or "'Enable with Redstone'"),
         "Select orb",
         "Set minimum time between soul network refills",
-        "Save and exit"
+        "Save and exit",
+		"Set tank side"
     })
 
     if option == 1 then
@@ -155,4 +156,7 @@ while true do
         print("Saved altar config")
         break
     end
+	elseif option == 15 then 
+		config.tank_side = config_utils.get_transposer_side(config.transposer) or config.tank_side
+	end 
 end

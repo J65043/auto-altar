@@ -63,6 +63,7 @@ if not check_tpose_side(transposer, config.input_side, "input") then return end
 if not check_tpose_side(transposer, config.altar_side, "altar") then return end
 if not check_tpose_side(transposer, config.staging_side, "staging") then return end
 if not check_tpose_side(transposer, config.output_side, "output") then return end
+if not check_tpose_side(transposer, config.tank_side, "tank") then return end
 
 if config.redstone_side == nil then
     print("error: redstone side was not set")
@@ -217,6 +218,36 @@ if is_item_the_orb(last_inserted_item) then
     goto enter_idle
 end
 
+function pull_excess_blood()
+    local current_blood = altar.getCurrentBlood()
+    local capacity = altar.getCapacity()
+
+    if current_blood > capacity * 0.9 then
+        local excess_blood = current_blood - (capacity * 0.9)
+        if excess_blood > 0 then
+            logger.info("Pulling excess blood: " .. excess_blood)
+            -- Add your logic here to transfer excess blood to the drum.
+            transferBloodToDrum(excess_blood) -- Replace with your actual function
+        end
+    end
+end
+
+function transferBloodToDrum(capacity)
+transferFluid(config.altar_side,config.tank_side,capacity)
+
+end
+
+-- During the idle state handling or after checking blood levels
+if current_blood < last_blood then
+    if not wait_until_finished() then
+        logger.error("could not wait for soul network to fill: program will exit")
+        set_active(false)
+        return
+    end
+    last_blood = current_blood
+else
+    pull_excess_blood() -- Call to pull excess blood if necessary
+end
 ::enter_active::
 logger.info("entering active state")
 
