@@ -1,4 +1,3 @@
-
 local component = require("component")
 local serialization = require("serialization")
 local filesystem = require("filesystem")
@@ -60,25 +59,23 @@ while true do
     local option = config_utils.get_option({
         "Exit without saving",
         "Show pending altar config",
-        "Set altar",
         "Set transposer",
         "Set input chest side",
         "Set output chest side",
         "Set staging chest side",
         "Set altar side",
+        "Set tank side",
         "Set redstone i/o",
         "Set altar redstone WA enable side",
         "Set enable signal to " .. (config.on_high and "'Disable with Redstone'" or "'Enable with Redstone'"),
         "Select orb",
         "Set minimum time between soul network refills",
-        "Save and exit",
-		"Set tank side"
+        "Save and exit"
     })
 
     if option == 1 then
         break
     elseif option == 2 then
-        print_address("Altar", config.altar, "blood_altar")
         print_address("Transposer", config.transposer, "transposer")
         print_address("Redstone I/O", config.redstone, "redstone")
         print()
@@ -87,6 +84,7 @@ while true do
         print_side("Staging", config.staging_side, config.transposer)
         print_side("Altar", config.altar_side, config.transposer)
         print_side("Output", config.output_side, config.transposer)
+        print_side("Tank", config.tank_side, config.transposer)
         print_side("Redstone enable", config.redstone_side, nil)
         print()
 
@@ -103,17 +101,17 @@ while true do
         print()
 
     elseif option == 3 then
-        config_utils.select_component("blood_altar", config, "altar")
-    elseif option == 4 then
         config_utils.select_component("transposer", config, "transposer")
-    elseif option == 5 then
+    elseif option == 4 then
         config.input_side = config_utils.get_transposer_side(config.transposer) or config.input_side
-    elseif option == 6 then
+    elseif option == 5 then
         config.output_side = config_utils.get_transposer_side(config.transposer) or config.output_side
-    elseif option == 7 then
+    elseif option == 6 then
         config.staging_side = config_utils.get_transposer_side(config.transposer) or config.staging_side
-    elseif option == 8 then
+    elseif option == 7 then
         config.altar_side = config_utils.get_transposer_side(config.transposer) or config.altar_side
+    elseif option == 8 then
+        config.tank_side = config_utils.get_transposer_side(config.transposer) or config.tank_side
     elseif option == 9 then
         config_utils.select_component("redstone", config, "redstone")
     elseif option == 10 then
@@ -156,7 +154,4 @@ while true do
         print("Saved altar config")
         break
     end
-	elseif option == 15 then 
-		config.tank_side = config_utils.get_transposer_side(config.transposer) or config.tank_side
-	end 
 end
