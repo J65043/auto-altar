@@ -1,4 +1,3 @@
-
 local os = require("os")
 local component = require("component")
 local event = require("event")
@@ -21,7 +20,7 @@ local function check_address(addr, name)
     end
 
     if component.proxy(addr) == nil then
-        print("error: " .. name .. " address is set, but the altar was not connected to the computer: try re-entering it")
+        print("error: " .. name .. " address is set, but the component was not connected to the computer: try re-entering it")
         return false
     end
 
@@ -51,11 +50,9 @@ local function check_tpose_side(transposer, side, name)
     return true
 end
 
-if not check_address(config.altar, "altar") then return end
 if not check_address(config.transposer, "transposer") then return end
 if not check_address(config.redstone, "redstone") then return end
 
-local altar = component.proxy(config.altar)
 local transposer = component.proxy(config.transposer)
 local redstone = component.proxy(config.redstone)
 
@@ -116,7 +113,7 @@ end
 
 function fill_altar(input_side, input_slot)
     -- sleep so that the altar doesn't eat the item
-    while altar.getProgress() > 0 do
+    while transposer.getFluidInTank(config.altar_side)[1].amount > 0 do
         if event.pull(0, "interrupted") ~= nil then
             logger.info("interrupted")
             set_active(false)
@@ -137,7 +134,7 @@ function wait_until_finished(start_item)
     end
 
     local idle_since = nil
-    local last_progress = altar.getProgress()
+    local last_amount = transposer.getFluidInTank(config.altar_side)[1].amount
 
     local start = os.time() / 72
 
@@ -155,9 +152,9 @@ function wait_until_finished(start_item)
         local now = os.time() / 72
 
         if waiting_for_orb then
-            local current_blood = altar.getCurrentBlood()
+            local current_blood = transposer.getFluidInTank(config.altar_side)[1].amount
     
-            if current_blood >= altar.getCapacity() * 0.9 or current_blood == 0 then
+            if current_blood >= transposer.getTankCapacity(config.altar_side) * 0.9 or current_blood == 0 then
                 if idle_since == nil then
                     idle_since = now
                 end
@@ -176,7 +173,7 @@ function wait_until_finished(start_item)
             end
         else
             if idle_since ~= nil and (now - idle_since) > idle_timeout then
-                if current_blood > 0 then
+                if transposer.getFluidInTank(config.altar_side)[1].amount > 0 then
                     clear_altar("altar is idle")
                     return true
                 else
@@ -219,35 +216,22 @@ if is_item_the_orb(last_inserted_item) then
 end
 
 function pull_excess_blood()
-    local current_blood = altar.getCurrentBlood()
-    local capacity = altar.getCapacity()
+    local current_blood = transposer.getFluidInTank(config.altar_side)[1].amount
+    local capacity = transposer.getTankCapacity(config.altar_side)
 
     if current_blood > capacity * 0.9 then
         local excess_blood = current_blood - (capacity * 0.9)
         if excess_blood > 0 then
             logger.info("Pulling excess blood: " .. excess_blood)
-            -- Add your logic here to transfer excess blood to the drum.
-            transferBloodToDrum(excess_blood) -- Replace with your actual function
+            transferBloodToDrum(excess_blood)
         end
     end
 end
 
-function transferBloodToDrum(capacity)
-transferFluid(config.altar_side,config.tank_side,capacity)
-
+function transferBloodToDrum(amount)
+    transposer.transferFluid(config.altar_side, config.tank_side, amount)
 end
 
--- During the idle state handling or after checking blood levels
-if current_blood < last_blood then
-    if not wait_until_finished() then
-        logger.error("could not wait for soul network to fill: program will exit")
-        set_active(false)
-        return
-    end
-    last_blood = current_blood
-else
-    pull_excess_blood() -- Call to pull excess blood if necessary
-end
 ::enter_active::
 logger.info("entering active state")
 
@@ -338,7 +322,7 @@ goto active
 ::enter_idle::
 logger.info("entering idle state")
 
-local last_blood = altar.getCurrentBlood()
+local last_blood = transposer.getFluidInTank(config.altar_side)[1].amount
 
 ::idle::
 for i, item in pairs(transposer.getAllStacks(config.input_side).getAll()) do
@@ -380,7 +364,7 @@ if active_item == nil or active_item.label == nil then
     end
 end
 
-local current_blood = altar.getCurrentBlood()
+local current_blood = transposer.getFluidInTank(config.altar_side)[1].amount
 
 if current_blood < last_blood then
     if not wait_until_finished() then
@@ -388,7 +372,9 @@ if current_blood < last_blood then
         set_active(false)
         return
     end
-    last_blood = altar.getCurrentBlood()
+    last_blood = transposer.getFluidInTank(config.altar_side)[1].amount
+else
+    pull_excess_blood()
 end
 
 if event.pull(1, "interrupted") ~= nil then
